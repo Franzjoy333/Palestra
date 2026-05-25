@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scheda Allenamento — Push·Pull + Gambe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0c0c0e;
+    --surface: #141418;
+    --surface2: #1a1a20;
+    --border: #252530;
+    --accent: #c8ff00;
+    --accent2: #00e5ff;
+    --push: #ff4d6d;
+    --pull: #7c5cfc;
+    --lower: #ff9a3c;
+    --text: #efefef;
+    --muted: #666680;
+    --warn: #ffd166;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 18px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .logo { display: flex; flex-direction: column; }
+  .logo-pre { font-size: 9px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; }
+  .logo-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; line-height: 1; color: var(--text); }
+  .logo-title span { color: var(--accent); }
+
+  .week-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 7px 13px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .week-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .badge { padding: 3px 9px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+
+  /* WEEK GRID */
+  .week-grid {
+    display: none;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-top: 12px;
+  }
+  .week-grid.show { display: grid; }
+  .wc { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 8px 3px; text-align: center; }
+  .wc-day { font-size: 8px; color: var(--muted); letter-spacing: 1px; }
+  .wc-name { font-size: 9px; font-weight: 700; margin-top: 3px; line-height: 1.3; }
+
+  /* ─── TABS ─── */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    position: sticky;
+    top: 108px;
+    z-index: 100;
+  }
+  .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    min-width: 70px;
+  }
+  .tab .tab-icon { font-size: 16px; }
+  .tab.a { --tc: var(--push); }
+  .tab.b { --tc: var(--pull); }
+  .tab.c { --tc: var(--push); }
+  .tab.d { --tc: var(--pull); }
+  .tab.active { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 12%, transparent); color: var(--tc); }
+
+  /* ─── CONTENT ─── */
+  .content { max-width: 720px; margin: 0 auto; padding: 16px 12px 40px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* DAY CARD */
+  .day-card {
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .dc-emoji { font-size: 32px; flex-shrink: 0; }
+  .dc-info { flex: 1; }
+  .dc-tag { font-size: 9px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+  .dc-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; line-height: 1; }
+  .dc-sub { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.5px; }
+  .dc-pills { display: flex; gap: 5px; margin-top: 8px; }
+  .dc-pill { padding: 3px 8px; border-radius: 3px; font-size: 9px; letter-spacing: 1px; font-weight: 700; }
+  .dc-count { text-align: right; flex-shrink: 0; }
+  .dc-count-n { font-family: 'Bebas Neue', sans-serif; font-size: 36px; line-height: 1; }
+  .dc-count-l { font-size: 9px; color: var(--muted); letter-spacing: 1px; }
+
+  /* SECTION DIVIDERS */
+  .sec-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0 8px;
+  }
+  .sec-label-text { font-size: 9px; letter-spacing: 3px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .sec-label-line { flex: 1; height: 1px; background: var(--border); }
+
+  /* EXERCISE CARDS */
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 7px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .ex.knee { border-left: 3px solid var(--warn); }
+  .ex.star { border-left: 3px solid var(--accent); }
+
+  .ex-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .ex-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--border);
+    width: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .ex-info { flex: 1; min-width: 0; }
+  .ex-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .ex-muscle { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .ex-meta { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+  .pill { padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+  .pill-s { background: #ffffff0f; border: 1px solid var(--border); color: var(--muted); }
+  .pill-r { background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); color: var(--accent); }
+  .arrow { font-size: 10px; color: var(--muted); transition: transform 0.3s; flex-shrink: 0; }
+  .arrow.open { transform: rotate(180deg); }
+
+  /* DETAIL PANEL */
+  .ex-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+  .ex-body.open { max-height: 350px; }
+  .ex-body-inner {
+    padding: 12px 14px 14px 46px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .db { display: flex; flex-direction: column; gap: 3px; }
+  .db.full { grid-column: 1 / -1; }
+  .db-l { font-size: 9px; letter-spacing: 2px; color: var(--accent); font-weight: 700; }
+  .db-v { font-size: 11px; color: var(--text); line-height: 1.55; }
+  .db-v.prog { color: var(--accent2); }
+  .db-v.note-knee { color: var(--warn); }
+
+  /* CARDIO */
+  .cardio {
+    background: color-mix(in srgb, var(--accent2) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent2) 25%, transparent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 14px;
+  }
+  .cardio-head { font-size: 9px; letter-spacing: 3px; color: var(--accent2); font-weight: 700; margin-bottom: 10px; }
+  .cardio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .ci { background: color-mix(in srgb, var(--accent2) 8%, transparent); padding: 9px 11px; border-radius: 5px; }
+  .ci.full { grid-column: 1 / -1; }
+  .ci-l { font-size: 8px; color: var(--accent2); letter-spacing: 1.5px; margin-bottom: 3px; }
+  .ci-v { font-size: 12px; font-weight: 700; color: var(--text); }
+  .cardio-note { font-size: 10px; color: var(--muted); margin-top: 9px; line-height: 1.5; }
+
+  /* TIPS */
+  .tips { margin-top: 26px; }
+  .tips-title { font-size: 9px; letter-spacing: 3px; color: var(--accent); font-weight: 700; margin-bottom: 12px; }
+  .tip {
+    display: flex;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  .tip-ico { font-size: 18px; flex-shrink: 0; }
+  .tip-t { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .tip-b { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  footer {
+    text-align: center;
+    padding: 24px 16px;
+    font-size: 10px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+    letter-spacing: 0.5px;
+    line-height: 1.9;
+  }
+
+  /* HELPERS */
+  .push-col { color: var(--push); }
+  .pull-col { color: var(--pull); }
+  .lower-col { color: var(--lower); }
+  .accent-col { color: var(--accent); }
+
+  ::-webkit-scrollbar { height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-row">
+    <div class="logo">
+      <span class="logo-pre">⚡ Scheda Personalizzata</span>
+      <span class="logo-title">PUSH·PULL <span>+</span> GAMBE</span>
+    </div>
+    <button class="week-btn" onclick="toggleWeek(this)">PIANO SETT.</button>
+  </div>
+
+  <div class="badges">
+    <span class="badge" style="background:#c8ff0015;border:1px solid #c8ff0040;color:var(--accent)">23 anni · 1.90 · 91 kg</span>
+    <span class="badge" style="background:#7c5cfc15;border:1px solid #7c5cfc40;color:var(--pull)">Intermedio</span>
+    <span class="badge" style="background:#ffd16615;border:1px solid #ffd16640;color:var(--warn)">Pallavolista</span>
+    <span class="badge" style="background:#00e5ff15;border:1px solid #00e5ff40;color:var(--accent2)">Recomposizione</span>
+  </div>
+
+  <div class="week-grid" id="weekGrid">
+    <div class="wc"><div class="wc-day">LUN</div><div class="wc-name push-col">Giorno A</div></div>
+    <div class="wc"><div class="wc-day">MAR</div><div class="wc-name pull-col">Giorno B</div></div>
+    <div class="wc"><div class="wc-day">MER</div><div class="wc-name" style="color:var(--muted)">Riposo</div></div>
+    <div class="wc"><div class="wc-day">GIO</div><div class="wc-name push-col">Giorno C</div></div>
+    <div class="wc"><div class="wc-day">VEN</div><div class="wc-name pull-col">Giorno D</div></div>
+    <div class="wc"><div class="wc-day">SAB</div><div class="wc-name" style="color:var(--warn)">Volley / Riposo</div></div>
+    <div class="wc"><div class="wc-day">DOM</div><div class="wc-name" style="color:var(--muted)">Riposo</div></div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab a active" onclick="switchTab('A', this)">
+    <span class="tab-icon">🔴</span>Giorno A
+  </button>
+  <button class="tab b" onclick="switchTab('B', this)">
+    <span class="tab-icon">🟣</span>Giorno B
+  </button>
+  <button class="tab c" onclick="switchTab('C', this)">
+    <span class="tab-icon">🔴</span>Giorno C
+  </button>
+  <button class="tab d" onclick="switchTab('D', this)">
+    <span class="tab-icon">🟣</span>Giorno D
+  </button>
+</div>
+
+<div class="content">
+
+<!-- ══════════════════════════════════ GIORNO A ══════════════════════════════════ -->
+<div class="panel active" id="panel-A">
+
+  <div class="day-card" style="background:color-mix(in srgb,var(--push) 8%,transparent);border:1px solid color-mix(in srgb,var(--push) 25%,transparent)">
+    <div class="dc-emoji">🔴</div>
+    <div class="dc-info">
+      <div class="dc-tag push-col">Giorno A — Lunedì</div>
+      <div class="dc-name">PUSH + QUAD</div>
+      <div class="dc-sub">Petto · Spalle · Tricipiti · Quadricipiti</div>
+      <div class="dc-pills">
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--push) 15%,transparent);color:var(--push)">5 Upper</span>
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--lower) 15%,transparent);color:var(--lower)">3 Lower</span>
+      </div>
+    </div>
+    <div class="dc-count">
+      <div class="dc-count-n push-col">8</div>
+      <div class="dc-count-l">ESERCIZI</div>
+    </div>
+  </div>
+
+  <!-- UPPER -->
+  <div class="sec-label">
+    <span class="sec-label-text push-col">💪 Upper — Spinta</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <!-- 1 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">1</div>
+      <div class="ex-info">
+        <div class="ex-name">Panca Piana con Bilanciere</div>
+        <div class="ex-muscle">Petto — Grande pettorale</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">4×</span>
+        <span class="pill pill-r">6–8</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">2–3 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Scapole retratte e depresse. Discesa controllata 2–3 sec. Gomiti a ~75° rispetto al busto, non a 90°.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 4×8 con forma pulita</div></div>
+    </div></div>
+  </div>
+
+  <!-- 2 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">2</div>
+      <div class="ex-info">
+        <div class="ex-name">Military Press con Bilanciere</div>
+        <div class="ex-muscle">Deltoide anteriore + Tricipite</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">4×</span>
+        <span class="pill pill-r">8–10</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Core e glutei attivi. Non iperestendere la lombare. Bilanciere davanti, non dietro la testa.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 4×10</div></div>
+    </div></div>
+  </div>
+
+  <!-- 3 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">3</div>
+      <div class="ex-info">
+        <div class="ex-name">Panca Inclinata Manubri</div>
+        <div class="ex-muscle">Petto alto + Deltoide anteriore</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">3×</span>
+        <span class="pill pill-r">10–12</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Semi-isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">30–45° inclinazione. Non toccare i manubri in cima: mantieni tensione sul pettorale.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2 kg per manubrio quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <!-- 4 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">4</div>
+      <div class="ex-info">
+        <div class="ex-name">Lateral Raise ai Cavi</div>
+        <div class="ex-muscle">Deltoide laterale</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">3×</span>
+        <span class="pill pill-r">12–15</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Cavo basso, tensione costante. Alzata lenta, discesa controllata. Braccio leggermente flesso.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+1 kg quando completi 3×15 perfetti</div></div>
+    </div></div>
+  </div>
+
+  <!-- 5 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">5</div>
+      <div class="ex-info">
+        <div class="ex-name">Tricep Pushdown + Skull Crusher</div>
+        <div class="ex-muscle">Tricipite — superset opzionale</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">3×</span>
+        <span class="pill pill-r">12+10</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec dopo coppia</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Superset (opz.)</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Puoi fare superset (pushdown → skull crusher senza pausa) o esercizi separati con 60 sec ciascuno. Gomiti fermi ai fianchi nel pushdown.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg su entrambi quando completi le serie target</div></div>
+    </div></div>
+  </div>
+
+  <!-- LOWER -->
+  <div class="sec-label">
+    <span class="sec-label-text lower-col">🦵 Lower — Quad focus</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <!-- 6 -->
+  <div class="ex knee" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">6</div>
+      <div class="ex-info">
+        <div class="ex-name">⚠️ Leg Press (range 90°)</div>
+        <div class="ex-muscle">Quadricipiti + Glutei</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">4×</span>
+        <span class="pill pill-r">10–12</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">2 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE GINOCCHIA</div><div class="db-v note-knee">⚠️ Non scendere oltre 90°. Piedi medi-alti sulla piattaforma. Non bloccare il ginocchio in estensione.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+10 kg quando completi 4×12 senza fastidi</div></div>
+    </div></div>
+  </div>
+
+  <!-- 7 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">7</div>
+      <div class="ex-info">
+        <div class="ex-name">Romanian Deadlift (RDL)</div>
+        <div class="ex-muscle">Femorali + Glutei + Lombari</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">3×</span>
+        <span class="pill pill-r">10–12</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Schiena neutra. Bilanciere vicino alle gambe. Senti lo stretch nei femorali prima di risalire. Zero impatto sulle ginocchia.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <!-- 8 -->
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head">
+      <div class="ex-num">8</div>
+      <div class="ex-info">
+        <div class="ex-name">Calf Raise in piedi</div>
+        <div class="ex-muscle">Gastrocnemio + Soleo</div>
+      </div>
+      <div class="ex-meta">
+        <span class="pill pill-s">4×</span>
+        <span class="pill pill-r">15–20</span>
+        <span class="arrow">▼</span>
+      </div>
+    </div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">45 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Range completo. Pausa 1 sec in cima. Importante per un pallavolista — polpacci forti proteggono caviglie e ginocchia.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg quando completi 4×20</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ GIORNO B ══════════════════════════════════ -->
+<div class="panel" id="panel-B">
+  <div class="day-card" style="background:color-mix(in srgb,var(--pull) 8%,transparent);border:1px solid color-mix(in srgb,var(--pull) 25%,transparent)">
+    <div class="dc-emoji">🟣</div>
+    <div class="dc-info">
+      <div class="dc-tag pull-col">Giorno B — Martedì</div>
+      <div class="dc-name">PULL + POSTERIORE</div>
+      <div class="dc-sub">Schiena · Bicipiti · Femorali · Glutei</div>
+      <div class="dc-pills">
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--pull) 15%,transparent);color:var(--pull)">5 Upper</span>
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--lower) 15%,transparent);color:var(--lower)">3 Lower</span>
+      </div>
+    </div>
+    <div class="dc-count">
+      <div class="dc-count-n pull-col">8</div>
+      <div class="dc-count-l">ESERCIZI</div>
+    </div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text pull-col">🏋️ Upper — Tiro</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">1</div><div class="ex-info"><div class="ex-name">Trazioni (Pull-up) a corpo libero</div><div class="ex-muscle">Gran dorsale + Bicipiti</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">6–8</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">2–3 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Parte dal massimo allungamento. Porta il mento sopra la sbarra. Oltre 8 rip → aggiungi zavorra.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg zavorra quando completi 4×8</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">2</div><div class="ex-info"><div class="ex-name">Rematore con Bilanciere</div><div class="ex-muscle">Dorsali + Romboidi + Bicipiti</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">8–10</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Busto a ~45°. Tira verso l'ombelico, non il petto. Retrai le scapole al termine del movimento.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 4×10</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">3</div><div class="ex-info"><div class="ex-name">Lat Machine presa larga</div><div class="ex-muscle">Gran dorsale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Inizia aprendo le scapole verso il basso, poi tira. Petto in fuori verso la barra. Non dondolare il busto.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex star" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">4</div><div class="ex-info"><div class="ex-name">★ Face Pull ai Cavi</div><div class="ex-muscle">Rotatori + Posteriore spalla</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">15–20</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">★ Priorità salute</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Corda alta, tira verso il viso aprendo i gomiti. Essenziale per un pallavolista. Bilancia tutti i movimenti di spinta.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg ogni 2 settimane — non forzare</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">5</div><div class="ex-info"><div class="ex-name">Curl con Bilanciere + Hammer</div><div class="ex-muscle">Bicipiti + Brachiale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10+12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec dopo coppia</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Superset (opz.)</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Curl bilanciere 10 rip → Hammer curl manubri 12 rip senza pausa. Gomiti fissi. Copertura completa del bicipite.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg su entrambi quando completi i target</div></div>
+    </div></div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text lower-col">🦵 Lower — Catena posteriore</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">6</div><div class="ex-info"><div class="ex-name">Hip Thrust con Bilanciere</div><div class="ex-muscle">Glutei</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento gluteo</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Spinta dall'anca, non dalla schiena. Mento verso il petto. Contrazione del gluteo in cima per 1 sec. Zero stress sulle ginocchia.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg quando completi 4×12</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">7</div><div class="ex-info"><div class="ex-name">Leg Curl sdraiato</div><div class="ex-muscle">Bicipite femorale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">12–15</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Anca a terra tutta l'esecuzione. Eccentrica lenta 3 sec. Non usare lo slancio.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg ogni 2 settimane</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex star" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">8</div><div class="ex-info"><div class="ex-name">★ Plank / Pallof Press</div><div class="ex-muscle">Core — stabilità anti-rotazione</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">30–45 sec</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">45 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">★ Core funzionale</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Core stabile = più forza nel salto + meno infortuni. Alterna plank frontale, laterale e Pallof press al cavo nel corso delle settimane.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 sec a settimana fino a 60 sec, poi aumenta difficoltà</div></div>
+    </div></div>
+  </div>
+
+  <div class="cardio">
+    <div class="cardio-head">🏃 CARDIO — FINE SESSIONE</div>
+    <div class="cardio-grid">
+      <div class="ci"><div class="ci-l">TIPO</div><div class="ci-v">Tapis Roulante</div></div>
+      <div class="ci"><div class="ci-l">DURATA</div><div class="ci-v">20 minuti</div></div>
+      <div class="ci full"><div class="ci-l">INTENSITÀ</div><div class="ci-v">60–65% FC max — ~130–140 bpm</div></div>
+    </div>
+    <div class="cardio-note">Passo veloce o leggero jogging. Nessun impatto aggiuntivo sulle ginocchia già cariche dal volley.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ GIORNO C ══════════════════════════════════ -->
+<div class="panel" id="panel-C">
+  <div class="day-card" style="background:color-mix(in srgb,var(--push) 8%,transparent);border:1px solid color-mix(in srgb,var(--push) 25%,transparent)">
+    <div class="dc-emoji">🔴</div>
+    <div class="dc-info">
+      <div class="dc-tag push-col">Giorno C — Giovedì</div>
+      <div class="dc-name">PUSH+ + GLUTEI</div>
+      <div class="dc-sub">Spalle · Petto variante · Tricipiti · Glutei · Calf</div>
+      <div class="dc-pills">
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--push) 15%,transparent);color:var(--push)">5 Upper</span>
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--lower) 15%,transparent);color:var(--lower)">3 Lower</span>
+      </div>
+    </div>
+    <div class="dc-count">
+      <div class="dc-count-n push-col">8</div>
+      <div class="dc-count-l">ESERCIZI</div>
+    </div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text push-col">💪 Upper — Spinta (variante)</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">1</div><div class="ex-info"><div class="ex-name">Military Press (main lift)</div><div class="ex-muscle">Spalle — Deltoide anteriore + Laterale</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">6–8</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">2–3 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Giorno C = spalle come main lift (vs petto nel Giorno A). Stessa tecnica, carico più alto puntando a 6–8 rip.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 4×8</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">2</div><div class="ex-info"><div class="ex-name">Panca Piana Manubri (variante)</div><div class="ex-muscle">Petto + Deltoide anteriore</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Con manubri hai più range di movimento rispetto al bilanciere. Ottimo per stimolare fibre diverse rispetto al Giorno A.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2 kg per manubrio quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">3</div><div class="ex-info"><div class="ex-name">Dips alle parallele</div><div class="ex-muscle">Petto basso + Tricipite</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">8–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Multiarticolare</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Busto leggermente inclinato in avanti per petto, verticale per tricipite. Se superi 12 rip, aggiungi zavorra.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg zavorra quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">4</div><div class="ex-info"><div class="ex-name">Lateral Raise Manubri (dropset)</div><div class="ex-muscle">Deltoide laterale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">12+8</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Dropset</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">12 rip con peso normale → immediato drop a metà carico → altre 8 rip. Brucia ma funziona. Ottima per larghezza delle spalle.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+1 kg quando riesci a fare 12+8 con controllo</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">5</div><div class="ex-info"><div class="ex-name">Estensione Tricipite Overhead</div><div class="ex-muscle">Tricipite — Capo lungo</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">12–15</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Cavo o manubrio. Braccia sopra la testa = massimo allungamento del capo lungo. Complementare allo skull crusher del Giorno A.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 3×15</div></div>
+    </div></div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text lower-col">🦵 Lower — Glutei + Split</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex knee" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">6</div><div class="ex-info"><div class="ex-name">⚠️ Bulgarian Split Squat</div><div class="ex-muscle">Quad + Glutei — unilaterale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">8–10/lato</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">90 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Unilaterale</div></div>
+      <div class="db full"><div class="db-l">NOTE GINOCCHIA</div><div class="db-v note-knee">⚠️ Piede anteriore abbastanza avanzato. Ginocchio NON oltre la punta. Manubri leggeri, tecnica prima del carico. Scendi lentamente.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2 kg per manubrio quando completi 3×10 per lato</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">7</div><div class="ex-info"><div class="ex-name">Hip Thrust con Manubrio</div><div class="ex-muscle">Glutei</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">12–15</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento gluteo</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Variante con manubrio (vs bilanciere del Giorno B). Stessa tecnica, rep più alte per stimolo metabolico.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2–4 kg quando completi 3×15</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">8</div><div class="ex-info"><div class="ex-name">Calf Raise seduto</div><div class="ex-muscle">Soleo (profondo)</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">15–20</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">45 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Seduto = isola il soleo (muscolo profondo). Complementare al calf in piedi del Giorno A. Sviluppo completo del polpaccio.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg ogni 2 settimane</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ GIORNO D ══════════════════════════════════ -->
+<div class="panel" id="panel-D">
+  <div class="day-card" style="background:color-mix(in srgb,var(--pull) 8%,transparent);border:1px solid color-mix(in srgb,var(--pull) 25%,transparent)">
+    <div class="dc-emoji">🟣</div>
+    <div class="dc-info">
+      <div class="dc-tag pull-col">Giorno D — Venerdì</div>
+      <div class="dc-name">PULL+ + STACCO</div>
+      <div class="dc-sub">Schiena variante · Bicipiti · Stacco · Core · Femorali</div>
+      <div class="dc-pills">
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--pull) 15%,transparent);color:var(--pull)">5 Upper</span>
+        <span class="dc-pill" style="background:color-mix(in srgb,var(--lower) 15%,transparent);color:var(--lower)">3 Lower</span>
+      </div>
+    </div>
+    <div class="dc-count">
+      <div class="dc-count-n pull-col">8</div>
+      <div class="dc-count-l">ESERCIZI</div>
+    </div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text pull-col">🏋️ Upper — Tiro (variante)</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">1</div><div class="ex-info"><div class="ex-name">Trazioni con zavorra</div><div class="ex-muscle">Gran dorsale + Bicipiti</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">5–6</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">3 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Forza massimale</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Giorno D = trazioni pesanti (5–6 rip vs 6–8 del Giorno B). Progressione di forza. Cintura + zavorra.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg quando completi 4×6 puliti</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">2</div><div class="ex-info"><div class="ex-name">Rematore Manubrio 1 braccio</div><div class="ex-muscle">Dorsali + Romboidi — unilaterale</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12/lato</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Unilaterale</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Unilaterale = range di movimento superiore e correzione sbilanciamenti. Tira il gomito verso il soffitto, non verso il lato.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2 kg quando completi 3×12 per lato</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">3</div><div class="ex-info"><div class="ex-name">Lat Machine presa stretta / supina</div><div class="ex-muscle">Gran dorsale — focus capo inferiore</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">75 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Presa supina o neutra stretta: diverso stimolo rispetto alla presa larga del Giorno B. Porta la barra verso il petto.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg quando completi 3×12</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex star" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">4</div><div class="ex-info"><div class="ex-name">★ Face Pull ai Cavi</div><div class="ex-muscle">Rotatori + Posteriore spalla</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">15–20</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">★ Priorità salute</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Presente in entrambi i giorni Pull: è il tuo "assicurazione" contro infortuni alla spalla da pallavolista. Non saltarlo mai.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5 kg ogni 2 settimane</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">5</div><div class="ex-info"><div class="ex-name">Curl Concentrato + Preacher</div><div class="ex-muscle">Bicipite — picco e base</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Curl concentrato su panca = picco del bicipite. Preacher (larry scott) = lunghezza. Alterna esercizio a esercizio nelle settimane.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2 kg quando completi 3×12 per entrambi</div></div>
+    </div></div>
+  </div>
+
+  <div class="sec-label">
+    <span class="sec-label-text lower-col">🦵 Lower — Stacco + Femorali + Core</span>
+    <div class="sec-label-line"></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">6</div><div class="ex-info"><div class="ex-name">Stacco da Terra Conventional</div><div class="ex-muscle">Catena posteriore completa</div></div><div class="ex-meta"><span class="pill pill-s">4×</span><span class="pill pill-r">4–6</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">3 min</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🔺 Re degli esercizi</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Schiena neutra obbligatoria. Spinge il pavimento, non tirare il bilanciere. Inizia sempre con riscaldamento progressivo. Cintura con carichi alti.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+2.5–5 kg quando completi 4×6 con forma perfetta</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">7</div><div class="ex-info"><div class="ex-name">Leg Curl seduto</div><div class="ex-muscle">Femorali — allungamento massimo</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">10–12</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">60 sec</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">🎯 Isolamento</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Seduto = anca flessa = massimo allungamento del bicipite femorale. Ottimo abbinamento col sdraiato del Giorno B.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">+5 kg ogni 2 settimane</div></div>
+    </div></div>
+  </div>
+
+  <div class="ex star" onclick="toggle(this)">
+    <div class="ex-head"><div class="ex-num">8</div><div class="ex-info"><div class="ex-name">★ Ab Circuit — Leg Raise + Pallof</div><div class="ex-muscle">Core completo</div></div><div class="ex-meta"><span class="pill pill-s">3×</span><span class="pill pill-r">15–20</span><span class="arrow">▼</span></div></div>
+    <div class="ex-body"><div class="ex-body-inner">
+      <div class="db"><div class="db-l">RECUPERO</div><div class="db-v">45 sec tra round</div></div>
+      <div class="db"><div class="db-l">TIPO</div><div class="db-v">★ Core circuit</div></div>
+      <div class="db full"><div class="db-l">NOTE</div><div class="db-v">Leg raise 15 rip → Pallof press 10/lato → Crunch inverso 15 rip. Senza pausa tra esercizi. Fondamentale per la prestazione nel volley.</div></div>
+      <div class="db full"><div class="db-l">PROGRESSIONE</div><div class="db-v prog">Aggiungi 1 kg di zavorra alle caviglie ogni 2 settimane</div></div>
+    </div></div>
+  </div>
+
+  <div class="cardio">
+    <div class="cardio-head">🏃 CARDIO — FINE SESSIONE</div>
+    <div class="cardio-grid">
+      <div class="ci"><div class="ci-l">TIPO</div><div class="ci-v">Tapis Roulante</div></div>
+      <div class="ci"><div class="ci-l">DURATA</div><div class="ci-v">20 minuti</div></div>
+      <div class="ci full"><div class="ci-l">INTENSITÀ</div><div class="ci-v">60–65% FC max — ~130–140 bpm</div></div>
+    </div>
+    <div class="cardio-note">Fine settimana → ritmo leggermente più sostenuto se le energie lo permettono. Mai HIIT: rispetta le ginocchia.</div>
+  </div>
+</div>
+
+<!-- ══════════ LINEE GUIDA ══════════ -->
+<div class="tips">
+  <div class="tips-title">📋 Linee Guida & Progressione</div>
+  <div class="tip"><span class="tip-ico">📈</span><div><div class="tip-t">Doppia progressione</div><div class="tip-b">Aumenta il peso solo quando completi TUTTE le serie nel range massimo di rip con forma pulita. Mai forzare il carico.</div></div></div>
+  <div class="tip"><span class="tip-ico">🔁</span><div><div class="tip-t">Deload ogni 4–5 settimane</div><div class="tip-b">Riduci i carichi del 40–50% per una settimana. Il muscolo cresce nel recupero, il deload è parte del programma.</div></div></div>
+  <div class="tip"><span class="tip-ico">⚠️</span><div><div class="tip-t">Ginocchia: regola numero uno</div><div class="tip-b">Dolore ≠ fastidio muscolare. Se avverti dolore articolare, sostituisci con Hack Squat o Leg Press unilaterale. Non ignorarlo.</div></div></div>
+  <div class="tip"><span class="tip-ico">🥩</span><div><div class="tip-t">Alimentazione</div><div class="tip-b">Lieve deficit ~200–300 kcal/giorno. Proteine: 1.8–2.2 g/kg = 165–200 g/giorno. Carboidrati soprattutto pre e post workout.</div></div></div>
+  <div class="tip"><span class="tip-ico">📝</span><div><div class="tip-t">Registra ogni sessione</div><div class="tip-b">Segna peso, serie e ripetizioni. Senza dati non puoi misurare i progressi. Un semplice foglio di carta basta.</div></div></div>
+</div>
+
+<footer>
+  ⚠️ = attenzione ginocchia &nbsp;|&nbsp; ★ = esercizio prioritario<br>
+  Tocca ogni esercizio per dettagli, note tecniche e progressione
+</footer>
+
+</div><!-- /content -->
+
+<script>
+  function switchTab(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+    // Close all expanded exercises
+    document.querySelectorAll('.ex-body.open').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.arrow.open').forEach(a => a.classList.remove('open'));
+  }
+
+  function toggle(card) {
+    const body = card.querySelector('.ex-body');
+    const arrow = card.querySelector('.arrow');
+    const isOpen = body.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.ex-body.open').forEach(b => b.classList.remove('open'));
+    document.querySelectorAll('.arrow.open').forEach(a => a.classList.remove('open'));
+    if (!isOpen) {
+      body.classList.add('open');
+      arrow.classList.add('open');
+      // Scroll into view softly
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+  }
+
+  function toggleWeek(btn) {
+    const g = document.getElementById('weekGrid');
+    g.classList.toggle('show');
+    btn.textContent = g.classList.contains('show') ? 'NASCONDI' : 'PIANO SETT.';
+  }
+</script>
+</body>
+</html>
